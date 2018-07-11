@@ -4,7 +4,7 @@
  *  Created on: 2018. júl. 5.
  *      Author: BT-Soft
  *
- * Eredeti ötle:
+ * Eredeti ötlet:
  * @see: https://github.com/mathertel/Radio
  *
  */
