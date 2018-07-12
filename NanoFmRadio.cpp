@@ -34,7 +34,6 @@ int adcBatterryVoltage;	// Akku feszültsége az ADC mérés szerint
 #define PIN_LCD_CS				5		/* ATmega328P PIN:11 */
 #define PIN_LCD_RST				4		/* ATmega328P PIN:6 */
 Adafruit_PCD8544 lcd(PIN_LCD_SCLK, PIN_LCD_DIN, PIN_LCD_DC, PIN_LCD_CS, PIN_LCD_RST);
-#define LCD_DEFAULT_FONT_WIDTH	6
 
 #include "BTRDA5807M.h"
 BT_RDA5807M radio;
