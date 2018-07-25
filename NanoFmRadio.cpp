@@ -9,8 +9,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_PCD8544.h>
 #include <Fonts/Org_01.h>
-#include <avr/sleep.h>
-#include <avr/power.h>
 
 //#define SERIAL_DEBUG
 
@@ -33,7 +31,8 @@ int adcBatterryVoltage;	// Akku feszültsége az ADC mérés szerint
 #define PIN_LCD_DC				6		/* ATmega328P PIN:12 */
 #define PIN_LCD_CS				5		/* ATmega328P PIN:11 */
 #define PIN_LCD_RST				4		/* ATmega328P PIN:6 */
-Adafruit_PCD8544 lcd(PIN_LCD_SCLK, PIN_LCD_DIN, PIN_LCD_DC, PIN_LCD_CS, PIN_LCD_RST);
+Adafruit_PCD8544 lcd(PIN_LCD_SCLK, PIN_LCD_DIN, PIN_LCD_DC, PIN_LCD_CS,
+PIN_LCD_RST);
 
 #include "BTRDA5807M.h"
 BT_RDA5807M radio;
@@ -51,12 +50,13 @@ char rdsTime[6];
 int8_t rdsTextScrollPosition = RDS_SCROLL_POSITION_BEGIN;
 
 #include "RotaryEncoder.h"
-#define ROTARY_ENCODER_SW_BUTTON	A1
-RotaryEncoder rotaryEncoder(A0 /* DT, ATmega328P PIN:23 */, 3 /* CLK, ATmega328P PIN:5*/, ROTARY_ENCODER_SW_BUTTON /* SW, ATmega328P PIN:24 */);
+#define ROTARY_ENCODER_SW_BUTTON	3
+RotaryEncoder rotaryEncoder(A0 /* CLK, ATmega328P PIN:23 */, A1 /* DT, ATmega328P PIN:24*/, ROTARY_ENCODER_SW_BUTTON /* SW, ATmega328P PIN:5 */);
 //
 //A rotary encoder tekergetése esetén mik változhatnak?
 #define NUMBER_OF_CHAR_ARRAY_ELEMENT(x) (sizeof(x) / sizeof(x[0]))
-const char *rotaryEncoderClickOptionsStr[] = { /*0*/"Frequency", /*1*/"Seek", /*2*/"Volume", /*3*/"BassBoost", /*4*/"SoftMute", /*5 */"LCD BLight" };
+const char *rotaryEncoderClickOptionsStr[] = { /*0*/"Frequency", /*1*/"Seek", /*2*/
+"Volume", /*3*/"BassBoost", /*4*/"SoftMute", /*5 */"LCD BLight" };
 #define ROTARY_ENCODER_CLICK_FREQUENCY_NDX	0
 #define ROTARY_ENCODER_CLICK_SEEK_NDX		1
 #define ROTARY_ENCODER_CLICK_VOLUME_NDX		2
@@ -84,11 +84,14 @@ LcdBlackLightAdjuster lcdBlkAdjuster(PIN_PHOTO_SENSOR, PIN_LCD_BLACKLIGHT_LED);
 #include "Config.h"
 Config config;
 
+//Low Power Support
+#include "LowPower.h"
+
 //Üzemállapotok
 typedef enum {
 	STATE_NORMAL, STATE_INTERNAL, STATE_STANDBY
 } State_t;
-State_t state = STATE_NORMAL;
+volatile State_t state = STATE_NORMAL;
 
 //általános buffer az LCD kiírogatásokhoz
 char tmpBuff[10];
@@ -133,7 +136,8 @@ void loopNormalDisplay() {
 	//térerő háromszög
 #define MAX_RSSI_SIMBOL_SIZE	5
 	uint8_t rssi = map(radioInfo.rssi, 0, RADIO_MAX_RSSI, 0, 10);
-	lcd.fillTriangle(0, MAX_RSSI_SIMBOL_SIZE, rssi, MAX_RSSI_SIMBOL_SIZE, rssi, MAX_RSSI_SIMBOL_SIZE - (rssi / 2), BLACK);
+	lcd.fillTriangle(0, MAX_RSSI_SIMBOL_SIZE, rssi, MAX_RSSI_SIMBOL_SIZE, rssi,
+	MAX_RSSI_SIMBOL_SIZE - (rssi / 2), BLACK);
 
 	sprintf(tmpBuff, "%2d", radioInfo.rssi);
 	lcd.setCursor(13, 5);
@@ -158,7 +162,8 @@ void loopNormalDisplay() {
 	lcd.fillRect(LCDWIDTH - 2, 2, 1, 2, BLACK); //batterry szimbólum "pozitív" vége
 
 	//Feszmérés - a loopCheckLowBatterry() függvényben van
-	byte battery = map(min(adcBatterryVoltage, BATT_ADC_MEAS_HIGH), BATT_ADC_MEAS_LOW, BATT_ADC_MEAS_HIGH, 0, BATT_SYMBOL_LENGTH - 1);
+	byte battery = map(min(adcBatterryVoltage, BATT_ADC_MEAS_HIGH),
+	BATT_ADC_MEAS_LOW, BATT_ADC_MEAS_HIGH, 0, BATT_SYMBOL_LENGTH - 1);
 	lcd.fillRect(LCDWIDTH - BATT_SYMBOL_LENGTH - 1, 1, battery, 4, BLACK);
 
 	//
@@ -167,25 +172,25 @@ void loopNormalDisplay() {
 	lcd.setCursor(0, 11);
 	lcd.print(rotaryEncoderClickOptionsStr[rotaryCurrentChangeIndex]);
 	switch (rotaryCurrentChangeIndex) {
-		case ROTARY_ENCODER_CLICK_VOLUME_NDX:	// Volume
-			lcd.setCursor(75, 11);
-			lcd.print(radioInfo.volume);
-			break;
+	case ROTARY_ENCODER_CLICK_VOLUME_NDX:	// Volume
+		lcd.setCursor(75, 11);
+		lcd.print(radioInfo.volume);
+		break;
 
-		case ROTARY_ENCODER_CLICK_BASSBOOST_NDX: //BasBoost
-			lcd.setCursor(70, 11);
-			lcd.print(radioInfo.bassBoost ? F("On") : F("Off"));
-			break;
+	case ROTARY_ENCODER_CLICK_BASSBOOST_NDX: //BasBoost
+		lcd.setCursor(70, 11);
+		lcd.print(radioInfo.bassBoost ? F("On") : F("Off"));
+		break;
 
-		case ROTARY_ENCODER_CLICK_SOFTMUTE_NDX: //SoftMute
-			lcd.setCursor(70, 11);
-			lcd.print(radioInfo.softMute ? F("On") : F("Off"));
-			break;
+	case ROTARY_ENCODER_CLICK_SOFTMUTE_NDX: //SoftMute
+		lcd.setCursor(70, 11);
+		lcd.print(radioInfo.softMute ? F("On") : F("Off"));
+		break;
 
-		case ROTARY_ENCODER_LCD_BACKLIGHT_NDX:	//LCD BackLight
-			lcd.setCursor(70, 11);
-			lcd.print(lcdBlkAdjuster.isBlState() ? F("On") : F("Off"));
-			break;
+	case ROTARY_ENCODER_LCD_BACKLIGHT_NDX:	//LCD BackLight
+		lcd.setCursor(70, 11);
+		lcd.print(lcdBlkAdjuster.isBlState() ? F("On") : F("Off"));
+		break;
 
 	}
 
@@ -369,7 +374,10 @@ void rdsDisplayTime(uint8_t hour, uint8_t minute) {
 
 }
 
-/// retrieve RDS data from the radio chip and forward to the RDS decoder library
+/**
+ * Radio RDS callback
+ * Továbpasszoljuk az RDS adatokat a dekodernek
+ */
 void rdsProcess(uint16_t block1, uint16_t block2, uint16_t block3, uint16_t block4) {
 	rds.processData(block1, block2, block3, block4);
 }
@@ -379,7 +387,8 @@ void rdsProcess(uint16_t block1, uint16_t block2, uint16_t block3, uint16_t bloc
  */
 void loopRadio() {
 	radio.getRadioInfo(&radioInfo);
-	//Ha van RDS, akkor zat is lekérjük
+
+	//Ha van RDS, akkor azt is lekérjük
 	if (radioInfo.tuned && radioInfo.rds) {
 		radio.checkRDS();
 	}
@@ -392,6 +401,7 @@ void loopStandby() {
 
 	float temp = readTemperature();
 
+	//Csak akkor írunk a képernyőre
 	if (temp != lastTemp) {
 		lastTemp = temp;
 
@@ -413,6 +423,17 @@ void loopStandby() {
 
 		lcd.display();
 	}
+}
+
+
+/**
+ * PowerDown módban a rotary encoder button-ra kötött megszakítás letiltása
+ *
+ * - Ha Standby állapotban megnyomták a gombot
+ * - Ha a lemerült akkumulátor miatt kikapcsolt állapotban voltunk és megnomyták a gombot
+ */
+void powerDownWakeUpIsr() {
+	detachInterrupt(ROTARY_ENCODER_SW_BUTTON);
 }
 
 /**
@@ -448,6 +469,7 @@ void systemSwithcOn() {
 	state = STATE_NORMAL;
 }
 
+
 /**
  * Rendszer kikapcsolása
  */
@@ -471,8 +493,8 @@ void systemSwithcOff() {
 	lcd.clearDisplay();
 	lcd.setFont(NULL);
 	lcd.setTextSize(2);
-	lcd.setCursor(15, 0);
-	lcd.print(F("BT-FM"));
+	lcd.setCursor(0, 0);
+	lcd.print(F("NANO-FM"));
 
 	lcd.setTextSize(1);
 	lcd.setCursor(5, 18);
@@ -488,6 +510,9 @@ void systemSwithcOff() {
 
 	//beállítjuk, hogy stadby állapotban vagyunk
 	state = STATE_STANDBY;
+
+	//Ráköltözünk a Rotary Encoder buttonjára, hogy a PowerDown módból ki lehessen lökni a rendszert
+	attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_SW_BUTTON), powerDownWakeUpIsr, FALLING);
 }
 
 /**
@@ -496,17 +521,17 @@ void systemSwithcOff() {
 void changeFrequency(RotaryEncoder::Direction direction) {
 
 	switch (direction) {
-		case RotaryEncoder::Direction::UP:
-			if (radioInfo.currentFreq + freqStep <= maxFreq) {
-				radio.setFrequency(radioInfo.currentFreq + freqStep);
-			}
-			break;
+	case RotaryEncoder::Direction::UP:
+		if (radioInfo.currentFreq + freqStep <= maxFreq) {
+			radio.setFrequency(radioInfo.currentFreq + freqStep);
+		}
+		break;
 
-		case RotaryEncoder::Direction::DOWN:
-			if (radioInfo.currentFreq - freqStep >= minFreq) {
-				radio.setFrequency(radioInfo.currentFreq - freqStep);
-			}
-			break;
+	case RotaryEncoder::Direction::DOWN:
+		if (radioInfo.currentFreq - freqStep >= minFreq) {
+			radio.setFrequency(radioInfo.currentFreq - freqStep);
+		}
+		break;
 	}
 	clearRdsInfo();
 }
@@ -516,17 +541,17 @@ void changeFrequency(RotaryEncoder::Direction direction) {
 void changeVolume(RotaryEncoder::Direction direction) {
 
 	switch (direction) {
-		case RotaryEncoder::Direction::UP:
-			if (radioInfo.volume + 1 <= RADIO_MAX_VOLUME) {
-				radio.setVolume(radioInfo.volume + 1);
-			}
-			break;
+	case RotaryEncoder::Direction::UP:
+		if (radioInfo.volume + 1 <= RADIO_MAX_VOLUME) {
+			radio.setVolume(radioInfo.volume + 1);
+		}
+		break;
 
-		case RotaryEncoder::Direction::DOWN:
-			if (radioInfo.volume - 1 >= 0) {
-				radio.setVolume(radioInfo.volume - 1);
-			}
-			break;
+	case RotaryEncoder::Direction::DOWN:
+		if (radioInfo.volume - 1 >= 0) {
+			radio.setVolume(radioInfo.volume - 1);
+		}
+		break;
 	}
 }
 
@@ -535,13 +560,13 @@ void changeVolume(RotaryEncoder::Direction direction) {
  */
 void changeSeek(RotaryEncoder::Direction direction) {
 	switch (direction) {
-		case RotaryEncoder::Direction::UP:
-			radio.seekUp(true);
-			break;
+	case RotaryEncoder::Direction::UP:
+		radio.seekUp(true);
+		break;
 
-		case RotaryEncoder::Direction::DOWN:
-			radio.seekDown(true);
-			break;
+	case RotaryEncoder::Direction::DOWN:
+		radio.seekDown(true);
+		break;
 	}
 
 	//töröljük az eddig RDS infókat
@@ -560,17 +585,17 @@ void changeSeek(RotaryEncoder::Direction direction) {
 void changeBassBoost(RotaryEncoder::Direction direction) {
 
 	switch (direction) {
-		case RotaryEncoder::Direction::UP:
-			if (!radioInfo.bassBoost) {
-				radio.setBassBoost(true);
-			}
-			break;
+	case RotaryEncoder::Direction::UP:
+		if (!radioInfo.bassBoost) {
+			radio.setBassBoost(true);
+		}
+		break;
 
-		case RotaryEncoder::Direction::DOWN:
-			if (radioInfo.bassBoost) {
-				radio.setBassBoost(false);
-			}
-			break;
+	case RotaryEncoder::Direction::DOWN:
+		if (radioInfo.bassBoost) {
+			radio.setBassBoost(false);
+		}
+		break;
 	}
 }
 /**
@@ -579,17 +604,17 @@ void changeBassBoost(RotaryEncoder::Direction direction) {
 void changeSoftMute(RotaryEncoder::Direction direction) {
 
 	switch (direction) {
-		case RotaryEncoder::Direction::UP:
-			if (!radioInfo.softMute) {
-				radio.setSoftMute(true);
-			}
-			break;
+	case RotaryEncoder::Direction::UP:
+		if (!radioInfo.softMute) {
+			radio.setSoftMute(true);
+		}
+		break;
 
-		case RotaryEncoder::Direction::DOWN:
-			if (radioInfo.softMute) {
-				radio.setSoftMute(false);
-			}
-			break;
+	case RotaryEncoder::Direction::DOWN:
+		if (radioInfo.softMute) {
+			radio.setSoftMute(false);
+		}
+		break;
 	}
 }
 /**
@@ -598,17 +623,17 @@ void changeSoftMute(RotaryEncoder::Direction direction) {
 void changeBackLight(RotaryEncoder::Direction direction) {
 
 	switch (direction) {
-		case RotaryEncoder::Direction::UP:
-			if (!lcdBlkAdjuster.isBlState()) {
-				lcdBlkAdjuster.on();
-			}
-			break;
+	case RotaryEncoder::Direction::UP:
+		if (!lcdBlkAdjuster.isBlState()) {
+			lcdBlkAdjuster.on();
+		}
+		break;
 
-		case RotaryEncoder::Direction::DOWN:
-			if (lcdBlkAdjuster.isBlState()) {
-				lcdBlkAdjuster.off();
-			}
-			break;
+	case RotaryEncoder::Direction::DOWN:
+		if (lcdBlkAdjuster.isBlState()) {
+			lcdBlkAdjuster.off();
+		}
+		break;
 	}
 }
 
@@ -621,29 +646,29 @@ void loopRotaryEncoder() {
 	if (state == STATE_NORMAL && rencResult.direction != RotaryEncoder::Direction::NONE) {
 
 		switch (rotaryCurrentChangeIndex) {
-			case ROTARY_ENCODER_CLICK_FREQUENCY_NDX: //frequency
-				changeFrequency(rencResult.direction);
-				break;
+		case ROTARY_ENCODER_CLICK_FREQUENCY_NDX: //frequency
+			changeFrequency(rencResult.direction);
+			break;
 
-			case ROTARY_ENCODER_CLICK_VOLUME_NDX: //volume
-				changeVolume(rencResult.direction);
-				break;
+		case ROTARY_ENCODER_CLICK_VOLUME_NDX: //volume
+			changeVolume(rencResult.direction);
+			break;
 
-			case ROTARY_ENCODER_CLICK_SEEK_NDX: //seek
-				changeSeek(rencResult.direction);
-				break;
+		case ROTARY_ENCODER_CLICK_SEEK_NDX: //seek
+			changeSeek(rencResult.direction);
+			break;
 
-			case ROTARY_ENCODER_CLICK_BASSBOOST_NDX: //bass boost
-				changeBassBoost(rencResult.direction);
-				break;
+		case ROTARY_ENCODER_CLICK_BASSBOOST_NDX: //bass boost
+			changeBassBoost(rencResult.direction);
+			break;
 
-			case ROTARY_ENCODER_CLICK_SOFTMUTE_NDX: //softmute
-				changeSoftMute(rencResult.direction);
-				break;
+		case ROTARY_ENCODER_CLICK_SOFTMUTE_NDX: //softmute
+			changeSoftMute(rencResult.direction);
+			break;
 
-			case ROTARY_ENCODER_LCD_BACKLIGHT_NDX: //LCD backlight
-				changeBackLight(rencResult.direction);
-				break;
+		case ROTARY_ENCODER_LCD_BACKLIGHT_NDX: //LCD backlight
+			changeBackLight(rencResult.direction);
+			break;
 		}
 
 	} else {
@@ -651,37 +676,37 @@ void loopRotaryEncoder() {
 
 			switch (rencResult.buttonState) {
 
-				//Egy klikk
-				case ClickEncoder::Button::Clicked:
-					//Ha ki van kapcsolva, akkor most bekapcsoljuk
-					if (state == STATE_STANDBY) {
-						systemSwithcOn();
-					} else if (state == STATE_INTERNAL) {	//ha belső módban voltunk, akkor visszalépünk normál módba
-						state = STATE_NORMAL;
-					} else {
-						//A rotary encoder tekergetés hatásának változtatása
-						rotaryCurrentChangeIndex++;
-						if (rotaryCurrentChangeIndex == NUMBER_OF_CHAR_ARRAY_ELEMENT(rotaryEncoderClickOptionsStr)) {
-							rotaryCurrentChangeIndex = 0;
-						}
+			//Egy klikk
+			case ClickEncoder::Button::Clicked:
+				//Ha ki van kapcsolva, akkor most bekapcsoljuk
+				if (state == STATE_STANDBY) {
+					systemSwithcOn();
+				} else if (state == STATE_INTERNAL) { //ha belső módban voltunk, akkor visszalépünk normál módba
+					state = STATE_NORMAL;
+				} else {
+					//A rotary encoder tekergetés hatásának változtatása
+					rotaryCurrentChangeIndex++;
+					if (rotaryCurrentChangeIndex == NUMBER_OF_CHAR_ARRAY_ELEMENT(rotaryEncoderClickOptionsStr)) {
+						rotaryCurrentChangeIndex = 0;
 					}
-					break;
+				}
+				break;
 
-					//dupla klikk
-				case ClickEncoder::Button::DoubleClicked:
-					//Két klikkre belső módba lépünk
-					if (state == STATE_NORMAL) {
-						state = STATE_INTERNAL;
-					}
-					break;
+				//dupla klikk
+			case ClickEncoder::Button::DoubleClicked:
+				//Két klikkre belső módba lépünk
+				if (state == STATE_NORMAL) {
+					state = STATE_INTERNAL;
+				}
+				break;
 
-					//Kikapcsolás
-				case ClickEncoder::Button::Held:
-					if (state != STATE_STANDBY) {
-						systemSwithcOff();
-						delay(2000);
-					}
-					break;
+				//Kikapcsolás
+			case ClickEncoder::Button::Held:
+				if (state != STATE_STANDBY) {
+					systemSwithcOff();
+					delay(2000);
+				}
+				break;
 			}
 		}
 	}
@@ -741,14 +766,6 @@ void setup() {
 }
 
 /**
- * LowBatterry PowerDown módban a rotary encoder button-ra kötött megszakítás
- */
-void powerDownWakeUpIsr() {
-	sleep_disable()
-	;
-	detachInterrupt(ROTARY_ENCODER_SW_BUTTON);
-}
-/**
  * Alacsony akkufeszültés vizsgálata
  */
 void loopCheckLowBatterry() {
@@ -791,23 +808,10 @@ void loopCheckLowBatterry() {
 	lcd.display();
 
 	//
-	// ---- Sleep
+	// ---- PowerDown !!
 	//
-
-	//--- Sleep mode
-	attachInterrupt(ROTARY_ENCODER_SW_BUTTON, powerDownWakeUpIsr, FALLING);
-
-	set_sleep_mode(SLEEP_MODE_IDLE);
-	__power_all_disable();
-	sleep_enable()
-	;
-
-	sleep_mode()
-	; // !!!
-
-	sleep_disable()
-	;
-	__power_all_enable();
+	attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_SW_BUTTON), powerDownWakeUpIsr, FALLING);
+	LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
 }
 
 /**
@@ -815,50 +819,48 @@ void loopCheckLowBatterry() {
  */
 void loop() {
 
+	static long lastLoopMsec = 0L;
+	switch (state) {
+	//Normál állapot
+	case STATE_NORMAL:
+		//LCD háttérvilágítás módosítása, ha aktív
+		lcdBlkAdjuster.adjust();
+
+		static long lastLoopRadioMsec = 0L;
+		if ((millis() - lastLoopRadioMsec) >= 50L) {
+			loopRadio();
+			lastLoopRadioMsec = millis();
+		}
+		if ((millis() - lastLoopMsec) >= 500L) {
+			loopNormalDisplay();
+			lastLoopMsec = millis();
+		}
+
+		break;
+
+		//Belső mérés állapot
+	case STATE_INTERNAL:
+		//LCD háttérvilágítás módosítása, ha aktív
+		lcdBlkAdjuster.adjust();
+
+		if ((millis() - lastLoopMsec) >= 500L) {
+			loopInternalDisplay();
+			lastLoopMsec = millis();
+		}
+		break;
+
+	default:
+		loopStandby();
+		LowPower.powerDown(SLEEP_250MS, ADC_OFF, BOD_OFF);
+		break;
+	}
+
+
 	//Alacsony feszülség esetén kiírjuk a képernyőre a figyelmeztető üzenetet és kikapcsolunk
 	loopCheckLowBatterry();
 
 	//RotaryEncoder olvasása
 	loopRotaryEncoder();
 
-	//LCD háttérvilágítás módosítása, ha aktív
-	if (lcdBlkAdjuster.isBlState()) {
-		lcdBlkAdjuster.adjust();
-	}
-
-	static long lastLoopMsec = 0L;
-	switch (state) {
-		//Normál állapot
-		case STATE_NORMAL:
-
-			static long lastLoopRadioMsec = 0L;
-			if ((millis() - lastLoopRadioMsec) >= 50L) {
-				loopRadio();
-				lastLoopRadioMsec = millis();
-			}
-			if ((millis() - lastLoopMsec) >= 500L) {
-				loopNormalDisplay();
-				lastLoopMsec = millis();
-			}
-
-			break;
-
-			//Belső mérés állapot
-		case STATE_INTERNAL:
-			if ((millis() - lastLoopMsec) >= 500L) {
-				loopInternalDisplay();
-				lastLoopMsec = millis();
-			}
-			break;
-
-		default:
-			//Standby állapotban vagyunk -> 1mp-enként frissítgetjük a hőmérsékletet
-			static long lastStandbyMsec = 0L;
-			if ((millis() - lastStandbyMsec) >= 1000L) {
-				loopStandby();
-				lastStandbyMsec = millis();
-			}
-			break;
-	}
 }
 
