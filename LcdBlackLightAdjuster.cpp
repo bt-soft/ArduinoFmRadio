@@ -6,51 +6,60 @@
  *
  * Eredeti ötlet:
  * @see https://github.com/sfrwmaker/fm_radio_rda5807
+ *
  */
 
 #include "LcdBlackLightAdjuster.h"
 
 /**
- *
+ * inicializálás
  */
 void LcdBlackLightAdjuster::init(void) {
-	pinMode(led_pin, OUTPUT);
-	pinMode(sensor_pin, INPUT);
-	int light = analogRead(sensor_pin);
 	brightness = new_brightness = DEFAUL_BRIGHTNESS;
-	checkMS = 0;
+	lastSensorCheckMsec = 0;
+	lastAdjustMsec = 0;
 	adjust();
 }
 
 /**
- *
+ * LED háttérvilágítás PWM állítgatás
  */
 void LcdBlackLightAdjuster::adjust(void) {
+
+	//ha nem aktív, akkor nem megyünk tovább
 	if (!blState) {
 		return;
 	}
 
 	if (new_brightness != brightness) {
-		new_brightness > brightness ? ++brightness : --brightness;
-		analogWrite(led_pin, brightness);
-		delay(5);
+		//15 msec-enként állítgatjuk a fényerõt
+		if (millis() - lastAdjustMsec > LED_ADJUST_MSEC) {
+			lastAdjustMsec = millis();
+
+			new_brightness > brightness ? ++brightness : --brightness;
+
+			analogWrite(led_pin, blLedLevel == LOW ? brightness : 255 - brightness);
+		}
 	}
 
-	if (millis() < checkMS) {
-		return;
-	}
-	checkMS = millis() + PERIOD;
+	//200msec-enként mérünk rá a szenzorra
+	if (millis() - lastSensorCheckMsec > SENSOR_CHECK_MSEC) {
+		lastSensorCheckMsec = millis();
 
-	int light = analogRead(sensor_pin);
-	if (light < B_NIGHT) {
-		new_brightness = NIGHTLY_BRIGHTNESS;
-		return;
-	}
+		//szenzor érték leolvasása
+		int measuredLight = analogRead(sensor_pin);
 
-	if (light > B_DAY) {
-		new_brightness = DAILY_BRIGHTNESS;
-		return;
-	}
+		if (measuredLight < SENSOR_VALUE_NIGHT) {
+			new_brightness = NIGHTLY_BRIGHTNESS;
+			return;
+		}
 
-	new_brightness = map(light, B_NIGHT, B_DAY, NIGHTLY_BRIGHTNESS, DAILY_BRIGHTNESS);
+		if (measuredLight > SENSOR_VALUE_DAY) {
+			new_brightness = DAILY_BRIGHTNESS;
+			return;
+		}
+
+		//A beállítandó érték kimatekozása
+		new_brightness = map(measuredLight, SENSOR_VALUE_NIGHT, SENSOR_VALUE_DAY, NIGHTLY_BRIGHTNESS, DAILY_BRIGHTNESS);
+	}
 }

@@ -65,7 +65,7 @@ const char *rotaryEncoderClickOptionsStr[] = { /*0*/"Frequency", /*1*/"Seek", /*
 #define ROTARY_CHANGE_DEFAULT_INDEX			ROTARY_ENCODER_CLICK_SEEK_NDX	/* seek a defaut menüpont a bekapcsolást követően */
 uint8_t rotaryCurrentChangeIndex = ROTARY_CHANGE_DEFAULT_INDEX;
 
-////Hőmérés
+//Hőmérés
 #define PIN_TEMP_SENSOR 		2		/* ATmega328P PIN:4, D10 a DS18B20 bemenete */
 #define DS18B20_TEMP_SENSOR_NDX 0		/* Dallas DS18B20 hõmérõ szenzor indexe */
 #include <OneWire.h>
@@ -78,7 +78,7 @@ float lastTemp;
 #include "LcdBlackLightAdjuster.h"
 #define PIN_LCD_BLACKLIGHT_LED 	11		/* ATmega328P PIN:17 */
 #define PIN_PHOTO_SENSOR		A2 		/* ATmega328P PIN:25  */
-LcdBlackLightAdjuster lcdBlkAdjuster(PIN_PHOTO_SENSOR, PIN_LCD_BLACKLIGHT_LED);
+LcdBlackLightAdjuster lcdBlkAdjuster(PIN_PHOTO_SENSOR, PIN_LCD_BLACKLIGHT_LED/*,  HIGH*/ /* <-- Az LCD Modul háttérvilágítás LED aktív szintje: */);
 
 #include "Config.h"
 Config config;
@@ -188,7 +188,7 @@ void loopNormalDisplay() {
 
 	case ROTARY_ENCODER_LCD_BACKLIGHT_NDX:	//LCD BackLight
 		lcd.setCursor(70, 11);
-		lcd.print(lcdBlkAdjuster.isBlState() ? F("On") : F("Off"));
+		lcd.print(lcdBlkAdjuster.blState ? F("On") : F("Off"));
 		break;
 
 	}
@@ -478,7 +478,7 @@ void systemSwithcOff() {
 	config.configVars.bassBoost = radio.getBassBoost();
 	config.configVars.softMute = radio.getSoftMute();
 
-	config.configVars.lcdBackLight = lcdBlkAdjuster.isBlState();
+	config.configVars.lcdBackLight = lcdBlkAdjuster.blState;
 	config.save();
 
 	// LCD LED Off
@@ -621,13 +621,13 @@ void changeBackLight(RotaryEncoder::Direction direction) {
 
 	switch (direction) {
 	case RotaryEncoder::Direction::UP:
-		if (!lcdBlkAdjuster.isBlState()) {
+		if (!lcdBlkAdjuster.blState) {
 			lcdBlkAdjuster.on();
 		}
 		break;
 
 	case RotaryEncoder::Direction::DOWN:
-		if (lcdBlkAdjuster.isBlState()) {
+		if (lcdBlkAdjuster.blState) {
 			lcdBlkAdjuster.off();
 		}
 		break;
