@@ -569,7 +569,7 @@ void changeSeek(RotaryEncoder::Direction direction) {
 	//töröljük az eddig RDS infókat
 	clearRdsInfo();
 
-	//várakozunk, hog ybefejeződjön a seek;
+	//várakozunk, hogy befejeződjön a seek;
 	delay(1000);
 
 	//beállítjuk a radio osztályban az aktuális frekvencia értéket
@@ -848,7 +848,7 @@ void loop() {
 
 	default:
 		loopStandby();
-		LowPower.powerDown(SLEEP_250MS, ADC_OFF, BOD_OFF);
+		LowPower.powerDown(SLEEP_500MS, ADC_OFF, BOD_OFF);
 		break;
 	}
 
