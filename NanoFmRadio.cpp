@@ -724,7 +724,7 @@ void setup() {
 	Serial.begin(115200);
 #endif
 
-	lcd.begin(40, 5);
+	lcd.begin(40, 4);
 	lcd.setTextColor(BLACK);
 
 	//Config beolvasása

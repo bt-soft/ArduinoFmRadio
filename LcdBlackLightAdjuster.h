@@ -25,13 +25,14 @@
 class LcdBlackLightAdjuster {
 public:
 
-	LcdBlackLightAdjuster(byte sensorPIN, byte lightPIN) {
+	LcdBlackLightAdjuster(byte sensorPIN, byte lightPIN, byte blLedActive = LOW) {
 		sensor_pin = sensorPIN;
 		led_pin = lightPIN;
 		brightness = DEFAUL_BRIGHTNESS;
 		checkMS = PERIOD;
 		new_brightness = 0;
 		blState = true;
+		this->blLedActive = blLedActive;
 	}
 	void init(void);                                // Initialize the data
 	void adjust(void);                              // Automatically adjust the brightness
@@ -51,7 +52,8 @@ public:
 	}
 
 private:
-	boolean blState;
+	bool blLedActive;								//A háttérvilágítás LED milyen szintre aktív?
+	bool blState;
 	byte sensor_pin;                                // Light sensor pin
 	byte led_pin;                                   // Led PWM pin
 	uint32_t checkMS;                               // Time in ms when the sensor was checked
