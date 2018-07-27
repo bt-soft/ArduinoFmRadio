@@ -19,7 +19,7 @@
 #define RADIO_DEFAUL_BASSBOOST		true
 #define RADIO_DEFAUL_SOFTMUTE		true
 
-
+//LCD
 #define LCD_DEFAULT_BACKLIGHT		true;
 
 

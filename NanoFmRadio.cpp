@@ -31,8 +31,7 @@ int adcBatterryVoltage;	// Akku feszültsége az ADC mérés szerint
 #define PIN_LCD_DC				6		/* ATmega328P PIN:12 */
 #define PIN_LCD_CS				5		/* ATmega328P PIN:11 */
 #define PIN_LCD_RST				4		/* ATmega328P PIN:6 */
-Adafruit_PCD8544 lcd(PIN_LCD_SCLK, PIN_LCD_DIN, PIN_LCD_DC, PIN_LCD_CS,
-PIN_LCD_RST);
+Adafruit_PCD8544 lcd(PIN_LCD_SCLK, PIN_LCD_DIN, PIN_LCD_DC, PIN_LCD_CS, PIN_LCD_RST);
 
 #include "BTRDA5807M.h"
 BT_RDA5807M radio;
@@ -425,7 +424,6 @@ void loopStandby() {
 	}
 }
 
-
 /**
  * PowerDown módban a rotary encoder button-ra kötött megszakítás letiltása
  *
@@ -468,7 +466,6 @@ void systemSwithcOn() {
 
 	state = STATE_NORMAL;
 }
-
 
 /**
  * Rendszer kikapcsolása
@@ -727,7 +724,7 @@ void setup() {
 	Serial.begin(115200);
 #endif
 
-	lcd.begin();
+	lcd.begin(40, 5);
 	lcd.setTextColor(BLACK);
 
 	//Config beolvasása
@@ -854,7 +851,6 @@ void loop() {
 		LowPower.powerDown(SLEEP_250MS, ADC_OFF, BOD_OFF);
 		break;
 	}
-
 
 	//Alacsony feszülség esetén kiírjuk a képernyőre a figyelmeztető üzenetet és kikapcsolunk
 	loopCheckLowBatterry();

@@ -8,9 +8,9 @@
  * Eredeti ötlet:
  * @see https://github.com/sfrwmaker/fm_radio_rda5807
  */
-#include <Arduino.h>
 #ifndef LCDBLACKLIGHTADJUSTER_H_
 #define LCDBLACKLIGHTADJUSTER_H_
+#include <Arduino.h>
 
 #define DEFAUL_BRIGHTNESS 	128            	// Default brightness of backlight
 #define DAILY_BRIGHTNESS  	0             	// Daily brightness of backlight
