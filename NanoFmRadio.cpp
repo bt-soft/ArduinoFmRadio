@@ -75,10 +75,10 @@ DallasTemperature ds18B20(new OneWire(PIN_TEMP_SENSOR));
 float lastTemp;
 
 //LCD Háttérvilágítás állítás
-#include "LcdBlackLightAdjuster.h"
-#define PIN_LCD_BLACKLIGHT_LED 	11		/* ATmega328P PIN:17 */
+#include "LcdBackLightAdjuster.h"
+#define PIN_LCD_BACKLIGHT_LED 	11		/* ATmega328P PIN:17 */
 #define PIN_PHOTO_SENSOR		A2 		/* ATmega328P PIN:25  */
-LcdBlackLightAdjuster lcdBlkAdjuster(PIN_PHOTO_SENSOR, PIN_LCD_BLACKLIGHT_LED/*,  HIGH*/ /* <-- Az LCD Modul háttérvilágítás LED aktív szintje: */);
+LcdBackLightAdjuster lcdBackLightAdjuster(PIN_PHOTO_SENSOR, PIN_LCD_BACKLIGHT_LED/*,  HIGH*/ /* <-- Az LCD Modul háttérvilágítás LED aktív szintje: */);
 
 #include "Config.h"
 Config config;
@@ -188,7 +188,7 @@ void loopNormalDisplay() {
 
 	case ROTARY_ENCODER_LCD_BACKLIGHT_NDX:	//LCD BackLight
 		lcd.setCursor(70, 11);
-		lcd.print(lcdBlkAdjuster.blState ? F("On") : F("Off"));
+		lcd.print(lcdBackLightAdjuster.blState ? F("On") : F("Off"));
 		break;
 
 	}
@@ -461,7 +461,7 @@ void systemSwithcOn() {
 
 	// LCD LED állítgatás
 	if (config.configVars.lcdBackLight) {
-		lcdBlkAdjuster.on();
+		lcdBackLightAdjuster.on();
 	}
 
 	state = STATE_NORMAL;
@@ -478,11 +478,11 @@ void systemSwithcOff() {
 	config.configVars.bassBoost = radio.getBassBoost();
 	config.configVars.softMute = radio.getSoftMute();
 
-	config.configVars.lcdBackLight = lcdBlkAdjuster.blState;
+	config.configVars.lcdBackLight = lcdBackLightAdjuster.blState;
 	config.save();
 
 	// LCD LED Off
-	lcdBlkAdjuster.off();
+	lcdBackLightAdjuster.off();
 
 	//rádió lecsukása
 	radio.term();
@@ -621,14 +621,14 @@ void changeBackLight(RotaryEncoder::Direction direction) {
 
 	switch (direction) {
 	case RotaryEncoder::Direction::UP:
-		if (!lcdBlkAdjuster.blState) {
-			lcdBlkAdjuster.on();
+		if (!lcdBackLightAdjuster.blState) {
+			lcdBackLightAdjuster.on();
 		}
 		break;
 
 	case RotaryEncoder::Direction::DOWN:
-		if (lcdBlkAdjuster.blState) {
-			lcdBlkAdjuster.off();
+		if (lcdBackLightAdjuster.blState) {
+			lcdBackLightAdjuster.off();
 		}
 		break;
 	}
@@ -756,7 +756,7 @@ void setup() {
 	ds18B20.begin();
 
 	//LCD háttérvilágítás
-	lcdBlkAdjuster.init();
+	lcdBackLightAdjuster.init();
 
 	//Kikapcsolás
 	systemSwithcOff();
@@ -821,7 +821,7 @@ void loop() {
 	//Normál állapot
 	case STATE_NORMAL:
 		//LCD háttérvilágítás módosítása, ha aktív
-		lcdBlkAdjuster.adjust();
+		lcdBackLightAdjuster.adjust();
 
 		static long lastLoopRadioMsec = 0L;
 		if ((millis() - lastLoopRadioMsec) >= 50L) {
@@ -838,7 +838,7 @@ void loop() {
 		//Belső mérés állapot
 	case STATE_INTERNAL:
 		//LCD háttérvilágítás módosítása, ha aktív
-		lcdBlkAdjuster.adjust();
+		lcdBackLightAdjuster.adjust();
 
 		if ((millis() - lastLoopMsec) >= 500L) {
 			loopInternalDisplay();

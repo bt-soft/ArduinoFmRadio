@@ -9,12 +9,12 @@
  *
  */
 
-#include "LcdBlackLightAdjuster.h"
+#include "LcdBackLightAdjuster.h"
 
 /**
  * inicializálás
  */
-void LcdBlackLightAdjuster::init(void) {
+void LcdBackLightAdjuster::init(void) {
 	brightness = new_brightness = DEFAUL_BRIGHTNESS;
 	lastSensorCheckMsec = 0;
 	lastAdjustMsec = 0;
@@ -24,7 +24,7 @@ void LcdBlackLightAdjuster::init(void) {
 /**
  * LED háttérvilágítás PWM állítgatás
  */
-void LcdBlackLightAdjuster::adjust(void) {
+void LcdBackLightAdjuster::adjust(void) {
 
 	//ha nem aktív, akkor nem megyünk tovább
 	if (!blState) {

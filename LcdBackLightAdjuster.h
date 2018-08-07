@@ -9,8 +9,8 @@
  * @see https://github.com/sfrwmaker/fm_radio_rda5807
  *
  */
-#ifndef LCDBLACKLIGHTADJUSTER_H_
-#define LCDBLACKLIGHTADJUSTER_H_
+#ifndef LCDBACKLIGHTADJUSTER_H_
+#define LCDBACKLIGHTADJUSTER_H_
 #include <Arduino.h>
 
 #define DAILY_BRIGHTNESS  	0             	/* Aappali fény esetén a LED vezérlõ értéke */
@@ -23,7 +23,7 @@
 #define LED_ADJUST_MSEC		15				/* Ennyi msec-enként állítgatjuk a háttérvilágítás LED-jét */
 #define SENSOR_CHECK_MSEC	200				/* Ennyi msec-enként mérünk rá a szenzorra */
 
-class LcdBlackLightAdjuster {
+class LcdBackLightAdjuster {
 
 private:
 	bool blLedLevel;								//A háttérvilágítás LED milyen szintre aktív?
@@ -42,7 +42,7 @@ public:
 	/**
 	 * konstruktor
 	 */
-	LcdBlackLightAdjuster(byte sensorPIN, byte lightPIN, byte blLedLevel = LOW) {
+	LcdBackLightAdjuster(byte sensorPIN, byte lightPIN, byte blLedLevel = LOW) {
 		sensor_pin = sensorPIN;
 		led_pin = lightPIN;
 		brightness = DEFAUL_BRIGHTNESS;
@@ -77,4 +77,4 @@ public:
 
 };
 
-#endif /* LCDBLACKLIGHTADJUSTER_H_ */
+#endif /* LCDBACKLIGHTADJUSTER_H_ */
